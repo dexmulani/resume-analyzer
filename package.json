@@ -1,0 +1,21 @@
+{
+  "name": "ai-resume-analyzer-root",
+  "version": "1.0.0",
+  "description": "Root orchestrator package configuration for AI Resume Analyzer",
+  "private": true,
+  "scripts": {
+    "install-backend": "npm install --prefix backend",
+    "start-backend": "npm start --prefix backend",
+    "start-frontend": "npx -y serve -l 3000 frontend",
+    "start": "npx -y concurrently \"npm run start-backend\" \"npm run start-frontend\""
+  },
+  "keywords": [
+    "resume",
+    "ats",
+    "analyzer",
+    "express",
+    "gemini"
+  ],
+  "author": "Antigravity AI",
+  "license": "MIT"
+}

@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Resume Analyzer & ATS Optimizer</title>
+  
+  <!-- CSS Stylesheet -->
+  <link rel="stylesheet" href="style.css">
+  
+  <!-- PDF.js and Mammoth.js CDNs for client-side document parsing -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/mammoth/1.6.0/mammoth.browser.min.js"></script>
+  
+  <!-- Lucide Icons CDN -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body>
+
+  <div class="app-container">
+    
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar glass-panel">
+      <div class="logo-container">
+        <div class="logo-icon">
+          <i data-lucide="scan-line" style="color: #ffffff;"></i>
+        </div>
+        <span class="logo-text">ResumeAI</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <ul class="nav-links">
+          <li class="nav-item active" data-tab="dashboard">
+            <a href="#"><i data-lucide="layout-dashboard"></i> Dashboard</a>
+          </li>
+          <li class="nav-item" data-tab="analyzer">
+            <a href="#"><i data-lucide="file-check-2"></i> Resume Analyzer</a>
+          </li>
+          <li class="nav-item" data-tab="tailoring">
+            <a href="#"><i data-lucide="sparkles"></i> Resume Tailoring</a>
+          </li>
+          <li class="nav-item" data-tab="interview">
+            <a href="#"><i data-lucide="award"></i> Interview Prep</a>
+          </li>
+          <li class="nav-item" data-tab="settings">
+            <a href="#"><i data-lucide="settings"></i> Settings</a>
+          </li>
+        </ul>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div id="mode-badge" class="demo-pill">Demo Mode</div>
+        <div style="font-size: 12px; color: var(--text-muted);">v1.0.0</div>
+      </div>
+    </aside>
+
+    <!-- Main Content Workspace -->
+    <main class="main-content">
+      
+      <!-- ================= DASHBOARD PANEL ================= -->
+      <section id="panel-dashboard" class="tab-panel active">
+        <div class="panel-header">
+          <h1 class="panel-title">Welcome back!</h1>
+          <p class="panel-subtitle">Here is a quick snapshot of your resume compatibility reports.</p>
+        </div>
+
+        <div class="stats-grid">
+          <div class="stat-card glass-panel">
+            <div class="stat-header">
+              <span>Analyzed Resumes</span>
+              <i data-lucide="files"></i>
+            </div>
+            <div class="stat-val" id="stat-count">0</div>
+            <div class="stat-desc">Stored locally in history</div>
+          </div>
+          <div class="stat-card glass-panel">
+            <div class="stat-header">
+              <span>Average Match Score</span>
+              <i data-lucide="bar-chart-3"></i>
+            </div>
+            <div class="stat-val" id="stat-avg">N/A</div>
+            <div class="stat-desc">Aim for 80%+ to clear ATS</div>
+          </div>
+          <div class="stat-card glass-panel">
+            <div class="stat-header">
+              <span>Best compatibility</span>
+              <i data-lucide="trending-up"></i>
+            </div>
+            <div class="stat-val" id="stat-best">N/A</div>
+            <div class="stat-desc">Top matched job role</div>
+          </div>
+        </div>
+
+        <div class="content-grid">
+          <!-- History Log -->
+          <div class="glass-panel" style="padding: 24px; min-height: 350px;">
+            <h3 class="card-title"><i data-lucide="history"></i> Recent Analyses</h3>
+            <div id="history-container" class="history-list">
+              <!-- Rendered via JS -->
+              <div class="empty-state">
+                <i data-lucide="folder-open"></i>
+                <div class="empty-state-title">No reports generated yet</div>
+                <div class="empty-state-desc">Head over to the Resume Analyzer to run your first compatibility report.</div>
+                <button class="btn-secondary" onclick="window.switchTab('analyzer')">Go to Analyzer</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Card -->
+          <div class="glass-panel" style="padding: 24px;">
+            <h3 class="card-title"><i data-lucide="zap"></i> Quick Tips</h3>
+            <div class="feedback-list" style="display: flex; flex-direction: column; gap: 15px; font-size: 14px; color: var(--text-secondary);">
+              <div class="list-item">
+                <i data-lucide="check-circle-2" class="list-item-icon success"></i>
+                <div class="list-item-content"><strong>Add Gemini API Key:</strong> Get deep, fully contextualized resume scoring by adding your own key in the Settings tab.</div>
+              </div>
+              <div class="list-item">
+                <i data-lucide="check-circle-2" class="list-item-icon success"></i>
+                <div class="list-item-content"><strong>Quantify Results:</strong> ATS parsing systems love metrics. Always include percentages, dollar amounts, or hour counts in your experience.</div>
+              </div>
+              <div class="list-item">
+                <i data-lucide="check-circle-2" class="list-item-icon success"></i>
+                <div class="list-item-content"><strong>Match Keywords:</strong> Review the missing keyword analysis in your reports and strategically blend them into your resume text.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RESUME ANALYZER PANEL ================= -->
+      <section id="panel-analyzer" class="tab-panel">
+        <div class="panel-header">
+          <h1 class="panel-title">Resume Analyzer</h1>
+          <p class="panel-subtitle">Evaluate your compatibility score against a specific Job Description.</p>
+        </div>
+
+        <div class="content-grid" id="analyzer-input-workspace">
+          <!-- Left side: Job description -->
+          <div class="glass-panel input-section" style="padding: 24px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <h3 class="card-title" style="margin-bottom:0;"><i data-lucide="briefcase"></i> Job Description</h3>
+              <div class="template-bar">
+                <span class="template-label">Try Demo Template:</span>
+                <button class="btn-template active" id="tpl-btn-frontend" data-type="frontend">Frontend</button>
+                <button class="btn-template" id="tpl-btn-datascientist" data-type="datascientist">Data Scientist</button>
+                <button class="btn-template" id="tpl-btn-productmanager" data-type="productmanager">Product Manager</button>
+              </div>
+            </div>
+            <textarea id="job-desc-input" class="textarea-premium" placeholder="Paste the target job description here..."></textarea>
+          </div>
+
+          <!-- Right side: Resume Upload -->
+          <div class="glass-panel input-section" style="padding: 24px;">
+            <h3 class="card-title"><i data-lucide="file-text"></i> Upload Resume</h3>
+            
+            <div id="drop-zone" class="upload-zone">
+              <input type="file" id="file-selector" accept=".pdf,.docx,.txt" style="display: none;">
+              <div class="upload-icon-container">
+                <i data-lucide="upload-cloud"></i>
+              </div>
+              <div class="upload-text">Drag & drop your resume file here</div>
+              <div class="upload-subtext">Supports PDF, Word (.docx), or Text (.txt) formats</div>
+            </div>
+
+            <!-- Pre-populated load button for quick trial -->
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px;">
+              <span style="font-size: 12px; color: var(--text-muted);">Want a quick trial?</span>
+              <button class="btn-secondary" id="load-sample-resume-btn" style="padding: 4px 10px; font-size: 11px;">Load Sample Resume</button>
+            </div>
+
+            <!-- Uploaded file summary card -->
+            <div id="file-preview-card" class="file-preview">
+              <div class="file-info">
+                <i data-lucide="file-check"></i>
+                <div>
+                  <div class="file-name" id="preview-filename">resume.pdf</div>
+                  <div class="file-size" id="preview-filesize">2.4 MB</div>
+                </div>
+              </div>
+              <button class="btn-remove-file" id="remove-file-btn"><i data-lucide="trash-2"></i></button>
+            </div>
+
+            <div class="btn-action-container">
+              <button id="btn-run-analysis" class="btn-premium">
+                <i data-lucide="compass"></i> Run Compatibility Audit
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- SKELETON ANALYSIS LOADER -->
+        <div id="analysis-loading-screen" class="glass-panel analysis-loader">
+          <div class="loader-glow">
+            <i data-lucide="cpu" style="color: rgba(var(--secondary-rgb), 1); font-size: 28px; z-index: 10;"></i>
+          </div>
+          <div class="loader-title">AI Resume Audit In Progress</div>
+          <div class="loader-steps">
+            <div class="loader-step-text">
+              <span>Extracting resume text contents...</span>
+              <span>Scanning key skill alignments...</span>
+              <span>Running ATS scoring algorithms...</span>
+              <span>Drafting custom recommendation feedback...</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- DETAILED REPORT DISPLAY -->
+        <div id="results-display-section" class="analysis-results-section">
+          
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px;">
+            <h2 style="font-size: 24px; font-family: var(--font-title);"><i data-lucide="check-square" style="color: #10b981; vertical-align: middle; margin-right: 8px;"></i> Compatibility Report</h2>
+            <button class="btn-secondary" id="btn-reanalyze"><i data-lucide="refresh-cw"></i> Scan New Resume</button>
+          </div>
+
+          <div class="content-grid">
+            <!-- Left panel: Scores and Breakdown -->
+            <div class="glass-panel" style="padding: 24px;">
+              <div style="display: flex; flex-direction: column; md-flex-direction: row; gap: 20px; align-items: center; border-bottom: 1px solid rgba(255, 255, 255, 0.05); padding-bottom: 20px;">
+                
+                <div class="score-container" style="position: relative;">
+                  <svg class="svg-gauge">
+                    <circle class="gauge-circle-bg" cx="80" cy="80" r="70"></circle>
+                    <circle id="score-ring-fill" class="gauge-circle-fill" cx="80" cy="80" r="70"></circle>
+                    <defs>
+                      <linearGradient id="gaugeGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" stop-color="#6366f1" />
+                        <stop offset="100%" stop-color="#06b6d4" />
+                      </linearGradient>
+                    </defs>
+                  </svg>
+                  <div class="score-label-overlay">
+                    <span class="score-num" id="report-score-num">0</span>
+                    <span class="score-text">Match</span>
+                  </div>
+                </div>
+
+                <div style="flex: 1;">
+                  <h4 style="font-size: 16px; margin-bottom: 8px;">Audit Summary</h4>
+                  <p id="report-summary-text" style="font-size: 13px; color: var(--text-secondary); line-height: 1.5;"></p>
+                </div>
+              </div>
+
+              <!-- Detailed Score progress breakdown -->
+              <div class="breakdown-list">
+                <div class="breakdown-row">
+                  <div class="breakdown-info">
+                    <span class="breakdown-name">Keyword Matching</span>
+                    <span class="breakdown-percent" id="score-breakdown-keywords">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-bar" id="score-bar-keywords" style="background: rgba(var(--secondary-rgb), 1);"></div>
+                  </div>
+                </div>
+                
+                <div class="breakdown-row">
+                  <div class="breakdown-info">
+                    <span class="breakdown-name">Experience Alignment</span>
+                    <span class="breakdown-percent" id="score-breakdown-experience">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-bar" id="score-bar-experience" style="background: rgba(var(--primary-rgb), 1);"></div>
+                  </div>
+                </div>
+
+                <div class="breakdown-row">
+                  <div class="breakdown-info">
+                    <span class="breakdown-name">Skills Coverage</span>
+                    <span class="breakdown-percent" id="score-breakdown-skills">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-bar" id="score-bar-skills" style="background: #a855f7;"></div>
+                  </div>
+                </div>
+
+                <div class="breakdown-row">
+                  <div class="breakdown-info">
+                    <span class="breakdown-name">Layout Formatting</span>
+                    <span class="breakdown-percent" id="score-breakdown-formatting">0%</span>
+                  </div>
+                  <div class="progress-track">
+                    <div class="progress-bar" id="score-bar-formatting" style="background: rgba(var(--success-rgb), 1);"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Right panel: Specific feedback and keywords -->
+            <div class="glass-panel" style="padding: 24px; min-height: 480px; display: flex; flex-direction: column;">
+              <div class="results-tab-bar">
+                <button class="results-tab-btn active" data-report-tab="tab-keyword-match">Keywords Analysis</button>
+                <button class="results-tab-btn" data-report-tab="tab-audit-feedback">Recommendations</button>
+              </div>
+
+              <!-- Report subtab: Keywords -->
+              <div id="tab-keyword-match" class="results-tab-panel active">
+                <h4 style="font-size:14px; margin-bottom:10px;">Found Keywords</h4>
+                <div class="tags-container" id="found-tags-container">
+                  <!-- JS Rendered -->
+                </div>
+
+                <h4 style="font-size:14px; margin-top:24px; margin-bottom:10px;">Missing Keywords</h4>
+                <div class="tags-container" id="missing-tags-container">
+                  <!-- JS Rendered -->
+                </div>
+              </div>
+
+              <!-- Report subtab: Feedback -->
+              <div id="tab-audit-feedback" class="results-tab-panel">
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                  <div>
+                    <h4 style="font-size:14px; margin-bottom:10px; color: rgba(var(--success-rgb), 1);">Strengths</h4>
+                    <div class="feedback-list" id="strengths-list-container">
+                      <!-- Rendered via JS -->
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style="font-size:14px; margin-bottom:10px; color: rgba(var(--danger-rgb), 1);">Gaps & Weaknesses</h4>
+                    <div class="feedback-list" id="weaknesses-list-container">
+                      <!-- Rendered via JS -->
+                    </div>
+                  </div>
+
+                  <div>
+                    <h4 style="font-size:14px; margin-bottom:10px; color: rgba(var(--warning-rgb), 1);">Actionable Recommendations</h4>
+                    <div class="feedback-list" id="recommendations-list-container">
+                      <!-- Rendered via JS -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= RESUME TAILORING PANEL ================= -->
+      <section id="panel-tailoring" class="tab-panel">
+        <div class="panel-header">
+          <h1 class="panel-title">Resume Tailoring</h1>
+          <p class="panel-subtitle">Apply targeted modifications to your resume experiences to secure the ATS match.</p>
+        </div>
+
+        <div id="tailoring-locked-state" class="glass-panel empty-state">
+          <i data-lucide="lock"></i>
+          <div class="empty-state-title">Tailoring Hub is Locked</div>
+          <div class="empty-state-desc">You need to run a compatibility audit in the <strong>Resume Analyzer</strong> before tailoring optimizations can be unlocked.</div>
+          <button class="btn-secondary" onclick="window.switchTab('analyzer')">Go to Resume Analyzer</button>
+        </div>
+
+        <div id="tailoring-unlocked-state" style="display: none;" class="tailor-column">
+          <!-- Executive Summary -->
+          <div class="glass-panel" style="padding: 24px;">
+            <h3 class="card-title"><i data-lucide="text-quote"></i> Optimized Executive Summary</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 15px;">Copy this tailored summary to replace your current resume introduction:</p>
+            <div class="tailor-bubble" id="tailored-summary-content">
+              <!-- Tailored Summary goes here -->
+            </div>
+            <div style="display: flex; justify-content: flex-end; margin-top: 10px;">
+              <button class="btn-copy" id="btn-copy-summary"><i data-lucide="copy"></i> Copy Summary</button>
+            </div>
+          </div>
+
+          <!-- Bullets comparison -->
+          <div class="glass-panel" style="padding: 24px;">
+            <h3 class="card-title"><i data-lucide="refresh-cw"></i> Optimized Work Experience Bullets</h3>
+            <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 20px;">Review these re-engineered bullet point suggestions incorporating STAR methodology metrics and targeted keywords:</p>
+            
+            <div id="tailored-bullets-container" style="display: flex; flex-direction: column; gap: 20px;">
+              <!-- Rendered via JS -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INTERVIEW PREP PANEL ================= -->
+      <section id="panel-interview" class="tab-panel">
+        <div class="panel-header">
+          <h1 class="panel-title">Interview Preparation</h1>
+          <p class="panel-subtitle">Practice with custom technical and behavioral questions curated specifically for you.</p>
+        </div>
+
+        <div id="interview-locked-state" class="glass-panel empty-state">
+          <i data-lucide="lock"></i>
+          <div class="empty-state-title">Interview Prep is Locked</div>
+          <div class="empty-state-desc">Run a compatibility audit in the <strong>Resume Analyzer</strong> first. The AI will generate customized interview questions addressing your specific profile and job gaps!</div>
+          <button class="btn-secondary" onclick="window.switchTab('analyzer')">Go to Resume Analyzer</button>
+        </div>
+
+        <div id="interview-unlocked-state" style="display: none; max-width: 900px; margin: 0 auto; width: 100%;">
+          <div style="margin-bottom: 20px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size:14px; color: var(--text-secondary); font-weight: 500;"><i data-lucide="info" style="font-size: 14px; vertical-align: middle; margin-right: 5px;"></i> Click any question to reveal the recommended answering strategy.</span>
+          </div>
+          
+          <div id="interview-questions-container" style="display: flex; flex-direction: column; gap: 15px;">
+            <!-- Accordion cards rendered via JS -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= SETTINGS PANEL ================= -->
+      <section id="panel-settings" class="tab-panel">
+        <div class="panel-header">
+          <h1 class="panel-title">Settings & Configuration</h1>
+          <p class="panel-subtitle">Configure your API access tokens and analysis model depth.</p>
+        </div>
+
+        <div class="glass-panel" style="max-width: 600px; padding: 30px;">
+          <h3 class="card-title" style="margin-bottom: 25px;"><i data-lucide="key-round"></i> API Credentials</h3>
+          
+          <div class="settings-group">
+            <div class="settings-field">
+              <label class="settings-label" for="api-key-input">Google Gemini API Key</label>
+              <input type="password" id="api-key-input" class="input-premium" placeholder="Enter your gemini API key (AIzaSy...)">
+              <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Note: You can also place your key directly in the server's backend <code>.env</code> file to bypass entering it here.</span>
+              <div id="api-key-status" class="api-status" style="display: none;">
+                <div class="status-dot"></div>
+                <span id="api-status-text">Testing Connection...</span>
+              </div>
+            </div>
+
+            <div class="settings-field">
+              <label class="settings-label" for="model-selector">Select Analysis Model</label>
+              <select id="model-selector" class="select-premium">
+                <option value="gemini-1.5-flash" selected>Gemini 1.5 Flash (Lightweight, ultra-fast analysis)</option>
+                <option value="gemini-1.5-pro">Gemini 1.5 Pro (Deconstructive, deep ATS evaluation)</option>
+              </select>
+              <span style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Gemini 1.5 Flash is highly recommended for speedy calculations. Pro yields slightly deeper auditing logic.</span>
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 12px; justify-content: flex-end; border-top: 1px solid rgba(255, 255, 255, 0.05); padding-top: 24px;">
+            <button class="btn-danger" id="btn-clear-settings">Clear Key</button>
+            <button class="btn-secondary" id="btn-test-api">Test Connection</button>
+            <button class="btn-premium" id="btn-save-settings" style="width: auto; padding: 10px 24px; box-shadow: none;">Save Changes</button>
+          </div>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Notification Toast alerts -->
+  <div id="toast-notification" class="alert-popup glass-panel">
+    <i id="toast-icon" data-lucide="info"></i>
+    <span id="toast-message">Notification message here</span>
+  </div>
+
+  <!-- Main Application Coordinator Code -->
+  <script type="module" src="app.js"></script>
+
+</body>
+</html>
