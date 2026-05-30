@@ -10,7 +10,7 @@ AI-powered Resume Analyzer with ATS scoring, skill extraction, and resume parsin
 - Resume Parsing
 - Skill Extraction
 - Job Description Matching
-- Resume Analysis Dashboard
+- Resume Analysis Dashboard   
 
 ---
 
