@@ -2,7 +2,7 @@
 
 AI-powered Resume Analyzer with ATS scoring, skill extraction, and resume parsing.
 
----
+-------------
 
 ## Features
 
